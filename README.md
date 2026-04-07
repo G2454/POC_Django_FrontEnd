@@ -7,7 +7,7 @@ Protótipo feito para verificar as capacidades e possibilidades do framework Dja
 Clone o repositório por meio do comando
 
 ```bash
-git clone https://github.com/G2454/FrontEndPythonStreamlit.git
+git clone https://github.com/G2454/POC_Django_FrontEnd/tree/main
 ```
 Vá para a raiz do repositório e configure o venv
 ```bash
