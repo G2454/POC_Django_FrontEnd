@@ -1,0 +1,511 @@
+<!-- python manage.py runserver -->
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+    }
+    
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+        color: #333;
+        text-align: center;
+    }
+    
+    .stock-selector {
+        margin: 20px 0;
+        text-align: center;
+    }
+    
+    .stock-selector {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    
+    .stock-selector-group {
+        flex: 1;
+        max-width: 400px;
+    }
+    
+    .stock-selector label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    
+    .stock-selector input {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        box-sizing: border-box;
+        text-transform: uppercase;
+    }
+    
+    .stock-selector input::placeholder {
+        color: #999;
+    }
+    
+    .stock-selector input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+    
+    .stock-selector button {
+        padding: 10px 25px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    
+    .stock-selector button:hover {
+        background-color: #0056b3;
+    }
+    
+    .stock-selector button:active {
+        background-color: #004085;
+    }
+    
+    .loading {
+        text-align: center;
+        color: #999;
+        display: none;
+        margin: 20px 0;
+    }
+    
+    .error {
+        background-color: #fee;
+        color: #c33;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+        display: none;
+    }
+    
+    #chartContainer {
+        height: 400px;
+        width: 100%;
+        margin: 20px 0;
+    }
+    
+    .data-section {
+        margin: 30px 0;
+    }
+    
+    .data-section h2 {
+        color: #333;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+    }
+    
+    #dataTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    
+    #dataTable th {
+        background-color: #007bff;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+    
+    #dataTable td {
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+    
+    #dataTable tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    #dataTable tr:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .sentiment-section {
+        margin: 30px 0;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+    }
+    
+    .sentiment-section h2 {
+        color: #333;
+        border-bottom: 2px solid #28a745;
+        padding-bottom: 10px;
+    }
+    
+    .sentiment-input-group {
+        margin: 15px 0;
+    }
+    
+    .sentiment-input-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    .sentiment-input-group input,
+    .sentiment-input-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .sentiment-input-group button {
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+    
+    .sentiment-input-group button:hover {
+        background-color: #218838;
+    }
+    
+    .sentiment-result {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        min-height: 50px;
+    }
+    
+    .sentiment-result pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 3px;
+        overflow-x: auto;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .sentiment-result div[style*="grid"] {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+let currentChart = null;
+
+window.onload = function () {
+    // Store stock options for validation
+    window.validStocks = ['ABEV3.SA', 'PETR4.SA', 'VALE3.SA', 'ITUB4.SA', 'BBDC4.SA', 'BBAS3.SA', 'MGLU3.SA', 'GGBR4.SA', 'WEGE3.SA', 'LREN3.SA'];
+    
+    // Set default value
+    document.getElementById('stockInput').value = 'ABEV3.SA';
+};
+
+function loadStockData(symbol) {
+    const loading = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    
+    loading.style.display = 'block';
+    errorDiv.style.display = 'none';
+    
+    fetch(`http://127.0.0.1:8001/api/external-stock-data?symbol=${symbol}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch stock data: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            loading.style.display = 'none';
+            updateChart(data, symbol);
+            updateTable(data);
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            errorDiv.textContent = `Error: ${error.message}. Make sure the API server at http://127.0.0.1:8001/ is running.`;
+            errorDiv.style.display = 'block';
+            console.error('Error:', error);
+        });
+}
+
+function updateChart(data, symbol) {
+    const chartConfig = {
+        animationEnabled: true,
+        theme: "light2",
+        exportEnabled: true,
+        title: {
+            text: `Stock Price Chart - ${symbol}`
+        },
+        subtitles: [{
+            text: "Candlestick Chart (Last 365 days)"
+        }],
+        axisX: {
+            valueFormatString: "MMM DD YYYY",
+            labelFontSize: 12
+        },
+        axisY: {
+            prefix: "$",
+            title: "Price (Local Currency)"
+        },
+        toolTip: {
+            shared: true,
+            contentFormatter: function(e) {
+                let content = "Date: " + new Date(e.entries[0].dataPoint.x).toLocaleDateString() + "<br>";
+                if (e.entries[0].dataSeries.type === "candlestick") {
+                    const y = e.entries[0].dataPoint.y;
+                    content += "Open: $" + y[0].toFixed(2) + "<br>";
+                    content += "High: $" + y[1].toFixed(2) + "<br>";
+                    content += "Low: $" + y[2].toFixed(2) + "<br>";
+                    content += "Close: $" + y[3].toFixed(2);
+                }
+                return content;
+            }
+        },
+        legend: {
+            reversed: true,
+            cursor: "pointer",
+            itemclick: toggleDataSeries
+        },
+        data: [{
+            type: "candlestick",
+            showInLegend: true,
+            name: "Stock Price",
+            yValueFormatString: "$#,##0.00",
+            xValueFormatString: "MMM DD",
+            dataPoints: data.candlestick_points
+        }]
+    };
+    
+    currentChart = new CanvasJS.Chart("chartContainer", chartConfig);
+    currentChart.render();
+}
+
+function updateTable(data) {
+    const tableBody = document.querySelector('#dataTable tbody');
+    tableBody.innerHTML = '';
+    
+    data.table_data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row.date}</td>
+            <td>$${row.open.toFixed(2)}</td>
+            <td>$${row.high.toFixed(2)}</td>
+            <td>$${row.low.toFixed(2)}</td>
+            <td>$${row.close.toFixed(2)}</td>
+            <td>${(row.volume / 1000000).toFixed(2)}M</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+function toggleDataSeries(e) {
+    if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+        e.dataSeries.visible = false;
+    } else {
+        e.dataSeries.visible = true;
+    }
+    e.chart.render();
+}
+
+function analyzeSentiment() {
+    const sentimentText = document.getElementById('sentimentText').value;
+    const resultDiv = document.getElementById('sentimentResult');
+    
+    if (!sentimentText.trim()) {
+        resultDiv.innerHTML = '<h3>Results:</h3><p style="color: #c33;">Please enter some text to analyze.</p>';
+        resultDiv.style.display = 'block';
+        return;
+    }
+    
+    resultDiv.innerHTML = '<h3>Results:</h3><p>Analyzing...</p>';
+    resultDiv.style.display = 'block';
+    
+    console.log('Sending request to: http://127.0.0.1:8001/predict');
+    console.log('Payload:', { text: sentimentText });
+    
+    fetch('http://127.0.0.1:8001/predict', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: sentimentText })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        resultDiv.innerHTML = '<h3>✓ Sentiment Analysis Results:</h3>';
+        
+        if (data.percentages) {
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            // Define colors for each sentiment
+            const sentimentColors = {
+                'Positivo': { color: '#28a745' },
+                'Negativo': { color: '#dc3545'},
+                'Neutro / Não se aplica': { color: '#6c757d' }
+            };
+            
+            // Display each sentiment with visual bar
+            for (const [label, percentage] of Object.entries(data.percentages)) {
+                const config = sentimentColors[label] || { color: '#007bff', emoji: '📊' };
+                const pct = parseFloat(percentage).toFixed(2);
+                
+                html += `
+                    <div style="border-left: 4px solid ${config.color}; padding: 10px; background-color: #f9f9f9; border-radius: 3px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: bold; color: #333;"> ${label}</span>
+                            <span style="font-size: 18px; font-weight: bold; color: ${config.color};">${pct}%</span>
+                        </div>
+                        <div style="width: 100%; background-color: #e9ecef; height: 20px; border-radius: 3px; overflow: hidden;">
+                            <div style="background-color: ${config.color}; height: 100%; width: ${pct}%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML += html;
+        } else {
+            resultDiv.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+        
+        resultDiv.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Full error:', error);
+        resultDiv.innerHTML = `
+            <h3>Results:</h3>
+            <p style="color: #c33;"><strong>❌ Error:</strong> ${error.message}</p>
+            <p style="color: #999; font-size: 12px;">
+                Make sure the API server is running at http://127.0.0.1:8001/predict<br>
+                Check browser console for more details (F12 → Console tab)
+            </p>
+        `;
+        resultDiv.style.display = 'block';
+    });
+}
+
+function fetchStockData() {
+    const stockInput = document.getElementById('stockInput');
+    const symbol = stockInput.value.trim().toUpperCase();
+    
+    if (!symbol) {
+        alert('Please enter a stock symbol');
+        return;
+    }
+    
+    // Validate symbol format (should have .SA suffix for Brazilian stocks)
+    if (!symbol.includes('.')) {
+        alert('Please enter a valid stock symbol (e.g., ABEV3.SA)');
+        return;
+    }
+    
+    loadStockData(symbol);
+}
+</script>
+</head>
+<body>
+<div class="container">
+    <h1>Stock Analysis Dashboard</h1>
+    
+    <div class="stock-selector">
+        <div class="stock-selector-group">
+            <label for="stockInput">Enter Stock Symbol:</label>
+            <input 
+                type="text" 
+                id="stockInput" 
+                placeholder="e.g., ABEV3.SA, PETR4.SA, VALE3.SA" 
+                onkeypress="if(event.key === 'Enter') fetchStockData()">
+        </div>
+        <button onclick="fetchStockData()"> Fetch Data</button>
+    </div>
+    
+    <p style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">
+        Available stocks: ABEV3.SA, PETR4.SA, VALE3.SA, ITUB4.SA, BBDC4.SA, BBAS3.SA, MGLU3.SA, GGBR4.SA, WEGE3.SA, LREN3.SA
+    </p>
+    
+    <div class="loading" id="loading">Loading stock data...</div>
+    <div class="error" id="error"></div>
+    
+    <div id="chartContainer"></div>
+    
+    <div class="data-section">
+        <h2>Latest Stock Data</h2>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Open</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Close</th>
+                    <th>Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="sentiment-section">
+        <h2>💭 Sentiment Analysis</h2>
+        <div class="sentiment-input-group">
+            <label for="sentimentText">Enter text for analysis:</label>
+            <input type="text" id="sentimentText" placeholder="Type something to analyze...">
+            <button onclick="analyzeSentiment()">Analyze Sentiment</button>
+        </div>
+        
+        <div class="sentiment-result" id="sentimentResult" style="display: none;">
+            <h3>Results:</h3>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+</body>
+</html>
